@@ -57,7 +57,7 @@
 class RTC : public I2Ccomponent, public Component, public Error {
 private:
 
-  /**
+	/**
 	 \var uint8_t _mfppin
 	 \brief Arduino pin to which the MFP pin of the RTC is connected.
 	 */
@@ -85,13 +85,13 @@ public:
 	 \brief Address of alarm 0.
 	 \warning Use the variable in your programs. Direct use of the value \c 0x0A might result incompatible with future versions.
 	 */
-	static const uint8_t RTC_ALM0;
+	static const uint8_t RTC_ALM0=0x0A;
 	/**
 	 \var static const uint8_t RTC_ALM1
 	 \brief Address of alarm 1.
 	 \warning Use the variable in your programs. Direct use of the value \c 0x11 might result incompatible with future versions.
 	 */
-	static const uint8_t RTC_ALM1;
+	static const uint8_t RTC_ALM1=0x11;
 	
 	/**
 	 \fn RTC(const uint8_t mfp) : I2Ccomponent(0x6F)
@@ -212,7 +212,7 @@ public:
      \remark Parameters are processed according to the order of appearence in \c format.	 
 	 @see isAlarmTriggered, alarmFlagReset
 	*/
-	void setAlarmMatch(const uint8_t target, const char format);
+	void setAlarmMatch(const uint8_t target, const char *format,...);
 	/**
 	 \fn void getAlarmMatch(const uint8_t target)
 	 \brief Gets the criteria used by the module for triggering the alarm \c target.
