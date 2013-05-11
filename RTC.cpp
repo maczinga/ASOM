@@ -19,7 +19,7 @@
  software. Use it at your own risk.
  \copyright BSD license. See license.txt for more details. 
  All text above must be included in any redistribution. 
- */
+*/
  
 #include "RTC.h"
 
