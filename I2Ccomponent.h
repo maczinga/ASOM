@@ -22,7 +22,7 @@
 #include "WProgram.h"
 #endif
 
-#include "/Applications/Arduino.app/Contents/Resources/Java/libraries/Wire/Wire.h"
+#include "Wire.h"
 
 /**
  \class I2Ccomponent I2Ccomponent.h
