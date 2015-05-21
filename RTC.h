@@ -43,7 +43,7 @@
 #define RTC_ALM_LVL_FLAG 0x80
 
 #define RTC_ALM_CFG 0x03
-#define RTC_CONFIGURATION_BYTE 0x7
+#define RTC_CONFIGURATION_BYTE 0x07
 #define RTC_ALM0_CONFIGURATION_BYTE 0x0D
 #define RTC_ALM1_CONFIGURATION_BYTE 0x14
 
@@ -72,7 +72,14 @@ private:
 	 \brief Stops the main clock
 	 */ 
 	void stop(void);
-	
+	/**
+     \fn void print(void)
+     \brief prints on serial
+     @param target is the bit printed
+     @param value represent the value of the bit to print
+     */
+    void print(const uint8_t target,const uint8_t val);
+    
 public:
 	/**
 	 \var static const uint8_t RTC_MAIN
@@ -183,7 +190,7 @@ public:
 	 and start waiting for another alarm event.
 	 @see alarmFlagReset, setTime, setDate, setAlarmMatch
 	*/
-	inline boolean isAlarmTriggered(const uint8_t target) { return (boolean)(readByte(target+RTC_DAY) & 0x08)>>3; }
+	inline boolean isAlarmTriggered(const uint8_t target) { return (boolean)((readByte(target+RTC_DAY) & 0x08)>>3); }
 	/**
 	 \fn void alarmFlagReset(const uint8_t target)
 	 \brief Resets the alarm flag for the \c target alarm.
@@ -206,6 +213,8 @@ public:
 	 \arg \c H : same as \c h
 	 \arg \c d : day (alarm triggered at 12:00:00 AM)
 	 \arg \c D : same as \c d
+     \arg \c x : date
+     \arg \c X : same as x
 	 \arg \c a : matches seconds, minutes, hours, day, date, month.
 	 \arg \c A : same as \c a
 	 \n
@@ -222,11 +231,12 @@ public:
 	 \arg \c m : minutes
 	 \arg \c h : hours
 	 \arg \c d : day (alarm triggered at 12:00:00 AM)
+     \arg \c x : date
 	 \arg \c a : matches seconds, minutes, hours, day, date, month.
 	 \n
 	 @see setAlarmMatrch, isAlarmTriggered, alarmFlagReset
 	 */	
-	uint8_t getAlarmMatch(const uint8_t target);
+	const char getAlarmMatch(const uint8_t target);
 	/**
 	 \fn boolean get1224Mode(const uint8_t target)
 	 \brief Returns the display mode for the target clock or alarm.
@@ -234,11 +244,12 @@ public:
 	 \return \c True if the target clock/alarm is in 12 hours display mode, \c False for 24 hours mode.
 	 @see set1224Mode
 	 */ 
-	inline boolean get1224Mode(const uint8_t target) { return (boolean)(readByte(target+RTC_HOUR) & 0x40)>>5; }
+	inline boolean get1224Mode(const uint8_t target) { return (boolean)(readByte(target+RTC_HOUR) & 0x40)>>6; }
 	/**
 	 \fn void set1224Mode(const uint8_t target, const boolean mode)
 	 \brief Sets the clock display mode for the given target clock or alarm.
 	 @param target can take one of the three vales: \c RTC_MAIN, \c RTC_ALM0, \c RTC_ALM1 for main clock, alarm 0 and alarm 1, respectively.
+     \warning only \c RTC_MAIN register is writeable, while the other are a copy of it and readonly. 
 	 @param mode true for 12 hours mode, false for 24 hours display mode.
 	 @see get1224Mode
 	*/ 	
@@ -270,6 +281,47 @@ public:
 	 @param enable setting this variable to true enables the external battery supply. Set it to false for disabling it.
 	 */
 	void batterySupply(const boolean enable);
+    /**
+     \fn void configureAlarmMode(const char *format,...)
+     \brief configures what alarm (ALM0, ALM1, none, both) is active
+     @param format character indicating the match criteria. Here are the admissible values:
+     \arg \c 0 : sets only \c RTC_ALM0 as active
+     \arg \c 1 : sets only \c RTC_ALM1 as active
+     \arg \c b : sets both \c RTC_ALM0 and \c RTC_ALM1 as active
+     \arg \c n : disables all alarms
+     @see getAlarmMode, isAlarmActive
+     */
+    void configureAlarmMode(const char format);
+    /**
+     \fn boolean isAlarmActive(const uint8_t target);
+     \brief returns whether the selected alarm is active.
+     @param target can take one of the two values: \c RTC_ALM0, \c RTC_ALM1 for alarm 0 and alarm 1, respectively.
+     @see getAlarmMode, configureAlarmMode
+     */
+    boolean isAlarmActive(const uint8_t target);
+    /**
+     \fn char getAlarmMode(void)
+     \brief gets which alarm are active
+     \return a character indicating which alarm mode is active; here are the possible values:
+     \arg \c 0 : only \c RTC_ALM0 is active
+     \arg \c 1 : only \c RTC_ALM1 is active
+     \arg \c n : no alarms are active
+     \arg \c b : both \c RTC_ALM0 and \c RTC_ALM1 are active
+     */
+   const char getAlarmMode(void);
+    /**
+     \fn void getConfBits(void)
+     \brief prints values of some meaningful registers
+     \warning since this reads some meaningful registers "unprotected", while not stopping the clock, it may be best not to use it or to stop and start the clock
+     */
+    void getConfBits(void);
+    /**
+     \fn void printConfBit(const uint_8t reg)
+     \brief prints on serial port the conf bit relative to the register
+     @param reg is the registry value
+     \warning since this can read some meaningful registers "unprotected", while not stopping the clock, it may be best not to use it or to stop and start the clock
+     */
+    void printConfBit(const uint8_t reg);
 };
 
 #endif
