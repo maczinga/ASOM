@@ -26,9 +26,11 @@
 #include "WProgram.h"
 #endif
 
+#include "RTCEEPROM.h"
 #include "I2Ccomponent.h"
 #include "Component.h"
 #include "Error.h"
+
 
 #define RTC_SECOND 0x0
 #define RTC_MINUTE 0x01
@@ -37,6 +39,8 @@
 #define RTC_DATE 0x04
 #define RTC_MONTH 0x05
 #define RTC_YEAR 0x06
+#define RTC_OSCTRIM 0x08
+
 
 #define RTC_ALM_I_FLAG 0x08
 #define RTC_1224_FLAG 0x40
@@ -46,6 +50,7 @@
 #define RTC_CONFIGURATION_BYTE 0x07
 #define RTC_ALM0_CONFIGURATION_BYTE 0x0D
 #define RTC_ALM1_CONFIGURATION_BYTE 0x14
+
 
 /**
  \class RTC RTC.h
@@ -79,6 +84,8 @@ private:
      @param value represent the value of the bit to print
      */
     void print(const uint8_t target,const uint8_t val);
+	
+	RTCEEPROM _eeprom;
     
 public:
 	/**
@@ -105,7 +112,7 @@ public:
 	 \brief Constructor
 	 @param mfp Arduino pin to which the MFP pin is connect.
 	*/
-	inline RTC(const uint8_t mfp) : I2Ccomponent(0x6F), Component(1,1) { _mfppin = mfp; }
+	inline RTC(const uint8_t mfp) : I2Ccomponent(0x6F), Component(1,1) { _mfppin = mfp; _eeprom=RTCEEPROM();}
 	/**
 	  \fn void setDate(const uint8_t target, const char *format, ...)
 	  \brief Sets the date for the main clock or for one of the alarms.
@@ -165,6 +172,8 @@ public:
 	  This gives an example of usage for the functions \c setDate(), \c setTime(), \c getDate(), \c getTime().
 	 */	
 	void setTime(const uint8_t target, const char *format, ...);
+	
+		inline uint8_t getWeekday(void){return (uint8_t)readByte(RTC_ALM1+RTC_DAY)&RTC_CONFIGURATION_BYTE;};
 	/**
 	 \fn void getTime(const uint8_t target, const char *format, ...)
 	 \brief Reads the time from the main clock or from one of the alarms.
@@ -302,7 +311,7 @@ public:
     /**
      \fn char getAlarmMode(void)
      \brief gets which alarm are active
-     \return a character indicating which alarm mode is active; here are the possible values:
+     @return a character indicating which alarm mode is active; here are the possible values:
      \arg \c 0 : only \c RTC_ALM0 is active
      \arg \c 1 : only \c RTC_ALM1 is active
      \arg \c n : no alarms are active
@@ -322,6 +331,55 @@ public:
      \warning since this can read some meaningful registers "unprotected", while not stopping the clock, it may be best not to use it or to stop and start the clock
      */
     void printConfBit(const uint8_t reg);
+	void forceFeedback(const uint8_t target, const uint8_t val);
+	/**
+	\fn uint8_t getTrimmingValue(void)
+	\brief returns the contents of the oscillator trimming register
+	@return the value of the trimming register 
+	@see setTrimmingValueUnsigned, setTrimmingValueSigned
+	*/
+	inline uint8_t getTrimmingValue(void) {return readByte(RTC_MAIN+RTC_OSCTRIM);}
+	
+	/**
+	\fn void setTrimming(uint8_t trimval)
+	\brief sets the trimming register value, with bit 7 as the sign
+	\param trimval represents the value to put in the register
+	@see getTrimmingValue
+	*/
+	void setTrimming(uint8_t trimval);
+	
+	/**
+	\fn void setSquareWaveOutput(uint8_t freqval)
+	\brief configure the multifunction pin to output a certain frequency
+	@param freqval can assume four values
+	\arg \c 0 indicates a 32.768 kHz freq
+	\arg \c 1 indicates a 8.192 kHz freq
+	\arg \c 2 indicates a 4.096 kHz freq
+	\arg \c 3 indicates a 1 Hz freq
+	*/
+	void setSquareWaveOutput(uint8_t freqval);
+	
+	/**
+	\fn void clearSquareWaveOutput(void)
+	\brief disables the square wave line output
+	*/
+	void clearSquareWaveOutput(void); 
+	
+	/**
+	\fn char getStatusRegister(void)
+	\brief gets the status of mem protection
+	@returns a char indicating what part of memory is protected:
+	\arg \c 0 means none
+	\arg \c q means the upper quarter is protected
+	\arg \c h means the upper half is protected
+	\arg \c a means all of the eeprom is protected
+	*/
+	inline const char getStatusRegister(void){return _eeprom.getStatus();};
+	
+	inline boolean writeSequentialBytes(const uint8_t addr, uint8_t *data,uint8_t length){return (_eeprom.writeSequentialBytes(addr,data,length)==0)?true:false;}
+	inline boolean writeSingleByte(const uint8_t addr, uint8_t data){return writeSequentialBytes(addr,&data,1);}
+	inline boolean readSequentialBytes(const uint8_t addr, uint8_t *data,uint8_t length){return (_eeprom.readSequentialBytes(addr,data,length)==0)?true:false;}
+	inline boolean readSingleByte(const uint8_t addr, uint8_t* data){return readSequentialBytes(addr,data,1);}
 };
 
 #endif
