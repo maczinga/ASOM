@@ -218,6 +218,11 @@ void RTC::setTime(const uint8_t target, const char *format, ...) {
 	start();
 }
 
+void RTC::forceFeedback(const uint8_t target, const uint8_t val)
+{
+	writeByte(target,val);
+}
+
 void RTC::setDate(const uint8_t target, const char *format, ...) {
 	va_list pl;
 	uint8_t val, tmp;
@@ -265,13 +270,13 @@ void RTC::setDate(const uint8_t target, const char *format, ...) {
 				break;
 			case 'y' : // year
 				val = (uint8_t)va_arg(pl, int);
-				if( val < 32 ) {
+				//if( val < 32 ) {
 					stop();
 					writeByte(target+RTC_YEAR, ((val/10)<<4)+(val%10));
 					start();
-				}
-				else
-					setError(ERROR_OUT_OF_RANGE);
+					//}
+				// else
+					// setError(ERROR_OUT_OF_RANGE);
 				break;
 			default:
 				setError(ERROR_INVALID_FORMAT);
@@ -334,7 +339,7 @@ void RTC::getTime(const uint8_t target, const char *format, ...) {
 			case 'H' : // hours
 				val = (uint8_t *)va_arg(pl, int *);
 				tmp = readByte(target+RTC_HOUR);
-				if(get1224Mode(target)) { // if 24H format
+				if(!get1224Mode(target)) { // if 24H format
 					tmp &= 0x3F;
 					*val = 10*(tmp>>4)+(tmp&0xf);
 				}
@@ -436,3 +441,34 @@ void RTC::printConfBit(const uint8_t reg){
     val=readByte(reg);
     print(reg,val);
 }
+
+void RTC::setTrimming(uint8_t trimval){
+stop();
+writeByte(RTC_OSCTRIM,trimval);
+start();	
+}
+
+void RTC::setSquareWaveOutput(uint8_t freqval){
+	uint8_t val =readByte(RTC_CONFIGURATION_BYTE);
+	val&=0xFC;
+	val|=(1<<6);
+	val|=(freqval);
+	stop();
+	writeByte(RTC_CONFIGURATION_BYTE,val);
+	start();
+}
+
+// void setBit(uint8_t byte,uint8_t val){
+// 	stop();
+// 	writeByte(byte,val);
+// 	start();
+// }
+
+void RTC::clearSquareWaveOutput(){
+	uint8_t val=readByte(RTC_CONFIGURATION_BYTE);
+	val&=0xBC;
+	stop();
+	writeByte(RTC_CONFIGURATION_BYTE,val);
+	start();
+}
+
