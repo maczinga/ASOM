@@ -375,10 +375,41 @@ public:
 	\arg \c a means all of the eeprom is protected
 	*/
 	inline const char getStatusRegister(void){return _eeprom.getStatus();};
-	
+	/**
+	\fn uint8_t writeSequentialBytes(const uint8_t addr, uint8_t *data,uint8_t length)
+	\brief write a sequence of maximum 8 bytes onto the RTC eeprom using Wire
+	@param addr is the memory address. It should be between 0x00 and 0x7F, otherwise the counter will overflow
+	@param data is an array of bytes to write onto the memory
+	@param length is the length of the data to write, in general different from the array length
+	@returns a boolean indicating whether the operation has gone ok
+	*/
 	inline boolean writeSequentialBytes(const uint8_t addr, uint8_t *data,uint8_t length){return (_eeprom.writeSequentialBytes(addr,data,length)==0)?true:false;}
+	/**
+	\fn uint8_t writeSingleByte(const uint8_t addr, uint8_t data)
+	\brief write a single byte onto the RTC eeprom using Wire. It internally calls writeSequentialBytes
+	@param addr is the memory address. It should be between 0x00 and 0x7F, otherwise the counter will overflow
+	@param data is the data to write
+	@returns a boolean indicating whether the operation has gone ok	
+	@see writeSequentialBytes
+	*/
 	inline boolean writeSingleByte(const uint8_t addr, uint8_t data){return writeSequentialBytes(addr,&data,1);}
+	/**
+	\fn uint8_t readSequentialBytes(const uint8_t addr, uint8_t *data,uint8_t length)
+	\brief reads a sequence of maximum 8 bytes from the RTC eeprom using Wire
+	@param addr is the memory start address. It should be between 0x00 and 0x7F, otherwise the counter will overflow
+	@param data is an array in which the data will be stored
+	@param length is the length of the data to read
+	@returns a boolean indicating whether the operation has gone ok
+	*/
 	inline boolean readSequentialBytes(const uint8_t addr, uint8_t *data,uint8_t length){return (_eeprom.readSequentialBytes(addr,data,length)==0)?true:false;}
+	/**
+	\fn uint8_t readSingleByte(const uint8_t addr, uint8_t data)
+	\brief reads a single byte from the RTC eeprom using Wire and readSequentialBytes
+	@param addr is the memory start address. It should be between 0x00 and 0x7F, otherwise the counter will overflow
+	@param data is where the data will be stored
+	@returns a boolean indicating whether the operation has gone ok	
+	@see readSequentialBytes
+	*/
 	inline boolean readSingleByte(const uint8_t addr, uint8_t* data){return readSequentialBytes(addr,data,1);}
 };
 
