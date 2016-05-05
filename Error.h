@@ -3,8 +3,9 @@
  \brief Class definition for error management.
  \details This class implements very basic error management common to all components.
  \author Enrico Formenti
- \version 0.1
- \date 2012-2013
+ \author Daniele Ratti
+ \version 0.5
+ \date 2012-2013; 2016
  \warning This software is provided "as is". The author is 
  not responsible for any damage of any kind caused by this
  software. Use it at your own risk.
@@ -23,44 +24,49 @@
 //@{
 
 /**
- \define ERROR_NONE 0x0
+ \def ERROR_NONE 0x0
  \brief Signals that that no error has occurred.
  */
 #define ERROR_NONE 0x0
 /**
- \define ERROR_INVALID_CRC 0xb9e5
+ \def ERROR_INVALID_CRC 0xb9e5
  \brief Signals that a CRC check has failed.
  */
 #define ERROR_INVALID_CRC 0xb9e5
 /**
- \define ERROR_NO_MORE_ADDRESSES 0x52aa
+ \def ERROR_NO_MORE_ADDRESSES 0x52aa
  \brief Signals that no more addresses can be attributed. 
  \details Signals that no more addresses can be attributed. This can happen when using components which use the 1-Wire bus, 
  for example.
  */
 #define ERROR_NO_MORE_ADDRESSES 0x52aa
 /**
- \define ERROR_TIME_OUT 0xab70
+ \def ERROR_TIME_OUT 0xab70
  \brief Signals that the last request has timed out. 
  */
 #define ERROR_TIME_OUT 0xab70
 /**
- \define ERROR_READ_FAILURE 0xca07
+ \def ERROR_READ_FAILURE 0xca07
  \brief Signals that the last read has failed for some reason. 
  */
 #define ERROR_READ_FAILURE 0xca07
 /**
- \define ERROR_OUT_OF_RANGE 0x5437
+ \def ERROR_WRITE_FAILURE 0xc807
+ \brief Signals that the last write has failed for some reason. 
+ */
+#define ERROR_WRITE_FAILURE 0xc807
+/**
+ \def ERROR_OUT_OF_RANGE 0x5437
  \brief Signals that the value obtained or passed as parameter is out of allowed range. 
  */
 #define ERROR_OUT_OF_RANGE 0x5437
 /**
- \define ERROR_INVALID_DATA 0xae92d210
+ \def ERROR_INVALID_DATA 0xae92d210
  \brief Signals that invalid data has been detected. 
  */
 #define ERROR_INVALID_DATA 0xae92d210
 /**
- \define ERROR_INVALID_FORMAT 0xa67ea6fe
+ \def ERROR_INVALID_FORMAT 0xa67ea6fe
  \brief Signals that the data has not the expected format/structure. 
  */
 #define ERROR_INVALID_FORMAT 0xa67ea6fe
@@ -119,6 +125,11 @@ public:
 	 \brief Returns \c True if an error has occurred, \c False otherwise.
 	 */
 	inline bool hasErrorOccurred(void) { return _error != ERROR_NONE; }
+	/**
+	\fn void clearError(void)
+	\brief reset the error to \c ERROR_NONE 
+	*/
+	inline void clearError(void){_error=ERROR_NONE;}
 };
 
 #endif
