@@ -8,8 +8,9 @@
  \brief Definition of the RTC class.
  \details Header file containing the definition of the RTC class.
  \author Enrico Formenti
- \version 0.1
- \date 2012-2013
+\author Daniele Ratti
+ \version 1.5
+ \date 2012-2016
  \warning This software is provided "as is". The author is 
  not responsible for any damage of any kind caused by this
  software. Use it at your own risk.
@@ -26,47 +27,110 @@
 #include "WProgram.h"
 #endif
 
-#include "RTCEEPROM.h"
+#include "RTCMEMORY.h"
 #include "I2Ccomponent.h"
 #include "Component.h"
 #include "Error.h"
 
+//@{
 
+/**
+\def RTC_SECOND 0x0
+\brief the byte address for the seconds register, in each page (main, alm0, alm1)
+*/
 #define RTC_SECOND 0x0
+/**
+\def RTC_MINUTE 0x01
+\brief the byte address for the minutes register, in each page (main, alm0, alm1)
+*/
 #define RTC_MINUTE 0x01
+/**
+\def RTC_HOUR 0x02
+\brief the byte address for the hours register, in each page (main, alm0, alm1)
+*/
 #define RTC_HOUR 0x02
+/**
+\def RTC_DAY 0x03
+\brief the byte address for the weekday register, in each page (main, alm0, alm1)
+*/
 #define RTC_DAY 0x03
+/**
+\def RTC_DATE 0x04
+\brief the byte address for the date (day of month) register, in each page (main, alm0, alm1)
+*/
 #define RTC_DATE 0x04
+/**
+\def RTC_MONTH 0x05
+\brief the byte address for the month register, in each page (main, alm0, alm1)	
+*/
 #define RTC_MONTH 0x05
+/**
+\def RTC_YEAR 0x06
+\brief the byte address for the seconds register, in each page (main, alm0, alm1)
+\remark this byte is only meaningful for the main clock register, since the alarms make no use of the year. 
+*/
 #define RTC_YEAR 0x06
+/**
+\def RTC_OSCTRIM 0x08
+\brief	the byte address for the oscillator trimming, used to calibrate the RTCC
+*/
 #define RTC_OSCTRIM 0x08
 
-
+/**
+\def RTC_ALM_I_FLAG 0x08
+\brief used to reset the alarm.
+*/
 #define RTC_ALM_I_FLAG 0x08
+/**
+\def RTC_1224_FLAG 0x40
+\brief	the byte address for the 12/24 hour mode flag
+*/
 #define RTC_1224_FLAG 0x40
+/**
+\def RTC_ALM_LVL_FLAG 0x80
+\brief	the byte address to set whether the multifunction pin is high or low when an alarm is triggered.
+*/
 #define RTC_ALM_LVL_FLAG 0x80
 
+/**
+\def RTC_ALM_CFG 0x03
+\brief	the byte address for the alarm configuration register in the alarms page
+*/
 #define RTC_ALM_CFG 0x03
+/**
+\def RTC_CONFIGURATION_BYTE 0x07
+\brief	the byte address for the RTC configuration register
+*/
 #define RTC_CONFIGURATION_BYTE 0x07
+
+/**
+\def RTC_ALM0_CONFIGURATION_BYTE 0x0D
+\brief	the address to reset the ALM0 when is triggered
+*/
 #define RTC_ALM0_CONFIGURATION_BYTE 0x0D
+/**
+\def RTC_ALM1_CONFIGURATION_BYTE 0x14
+\brief	the address to reset the ALM1 when is triggered
+*/
 #define RTC_ALM1_CONFIGURATION_BYTE 0x14
 
+//@}
 
 /**
  \class RTC RTC.h
  \brief A class for real time clock module based on MCP79410 chip.
  
- This class...
+ This class provides an interface for the component, defining a driver for almost all of the
+ functionalities described in the datasheet. The Error class is used to set errors on the
+ error buffer, and the I2Ccomponent class contains the basic I2C communication specifications.
+ 
+ A specific class has been created to manage the memory (EEPROM and SRAM) communications,
+ and is incapsulated as a strategy class.
  */
 
 class RTC : public I2Ccomponent, public Component, public Error {
 private:
 
-	/**
-	 \var uint8_t _mfppin
-	 \brief Arduino pin to which the MFP pin of the RTC is connected.
-	 */
-	uint8_t _mfppin;
 	/**
 	 \fn void start(void)
 	 \brief Starts the main clock
@@ -85,7 +149,46 @@ private:
      */
     void print(const uint8_t target,const uint8_t val);
 	
-	RTCEEPROM _eeprom;
+	/** 
+	 \fn uint8_t readSingleByteFromMemory(const uint8_t address,boolean isEEprom)
+	 \brief reads a single byte from a given memory address
+	 @param address represents the byte address
+	 @param isEEprom a boolean, \c true when reading from EEProm, \c false when reading from SRAM
+	 \return the byte value stored in the memory
+	 \remark the method uses readBytesFromMemory
+	 @see readBytesFromMemory
+	*/
+	uint8_t readSingleByteFromMemory(const uint8_t address,boolean isEEprom);
+	/** 
+	 \fn void readBytesFromMemory(const uint8_t address,uint8_t*data,uint8_t length,boolean isEEprom)
+	 \brief reads a set of bytes from the memory
+	 @param address represents the starting memory address
+	 @param data is a pointer to an array (single or multiple valued) of bytes
+	 @param length is the number of bytes to read from the start
+	 @param isEEprom is a boolean assuming value \c True when reading from EEPROM, \c False when reading from SRAM
+	*/
+	void readBytesFromMemory(const uint8_t address,uint8_t*data,uint8_t length,boolean isEEprom);
+	/**
+	 \fn void writeBytesToMemory(const uint8_t address,uint8_t*data,uint8_t length,boolean isEEprom)
+	 \brief writes a set of bytes to memory, starting from a specific address
+	 @param address represents the starting memory address
+	 @param data is the pointer to the array or value to write
+	 @param length is the number of bytes to write from the start
+	 @param isEEprom is a boolean assuming value \c True when writing to EEPROM, \c False when writing to SRAM
+	*/
+	void writeBytesToMemory(const uint8_t address,uint8_t*data,uint8_t length,boolean isEEprom);
+	
+		/**
+		\var RTCMEMORY _mem
+		\brief the memory strategy object
+		*/
+	RTCMEMORY _mem;
+	
+	/**
+	\var boolean _allowEEpromOverflow
+	\brief considers whether the EEPROM pointer is allowed to overflow when more than a page is written
+	*/
+	boolean _allowEEpromOverflow;
     
 public:
 	/**
@@ -108,11 +211,16 @@ public:
 	static const uint8_t RTC_ALM1=0x11;
 	
 	/**
-	 \fn RTC(const uint8_t mfp) : I2Ccomponent(0x6F)
-	 \brief Constructor
-	 @param mfp Arduino pin to which the MFP pin is connect.
+	 \fn RTC(void) : I2Ccomponent(0x6F)
+	 \brief Default Constructor
 	*/
-	inline RTC(const uint8_t mfp) : I2Ccomponent(0x6F), Component(1,1) { _mfppin = mfp; _eeprom=RTCEEPROM();}
+	inline RTC(void) : I2Ccomponent(0x6F), Component(1,1) {  _mem=RTCMEMORY(); _allowEEpromOverflow=true;}
+	/**
+	\fn RTC(boolean allowOverflow):I2Ccomponent(0x6F)
+	\brief extendend constructor for specifically allow or disallow the EEprom page overflow
+	@param allowOverflow boolean \c True when the page overflow is allowed
+	*/
+	inline RTC(boolean allowOverflow):I2Ccomponent(0x6F),Component(1,1){_allowEEpromOverflow=allowOverflow; _mem=RTCMEMORY();}
 	/**
 	  \fn void setDate(const uint8_t target, const char *format, ...)
 	  \brief Sets the date for the main clock or for one of the alarms.
@@ -167,13 +275,8 @@ public:
 	 \remark Parameters are processed according to the order of appearence in \c format.
 	 @see set1224Mode, getTime, setDate, getDate
 	 */
-	 /**
-	 \example RTCtest/RTCtest.ino 
-	  This gives an example of usage for the functions \c setDate(), \c setTime(), \c getDate(), \c getTime().
-	 */	
 	void setTime(const uint8_t target, const char *format, ...);
 	
-		inline uint8_t getWeekday(void){return (uint8_t)readByte(RTC_ALM1+RTC_DAY)&RTC_CONFIGURATION_BYTE;};
 	/**
 	 \fn void getTime(const uint8_t target, const char *format, ...)
 	 \brief Reads the time from the main clock or from one of the alarms.
@@ -331,7 +434,7 @@ public:
      \warning since this can read some meaningful registers "unprotected", while not stopping the clock, it may be best not to use it or to stop and start the clock
      */
     void printConfBit(const uint8_t reg);
-	void forceFeedback(const uint8_t target, const uint8_t val);
+	
 	/**
 	\fn uint8_t getTrimmingValue(void)
 	\brief returns the contents of the oscillator trimming register
@@ -374,12 +477,76 @@ public:
 	\arg \c h means the upper half is protected
 	\arg \c a means all of the eeprom is protected
 	*/
-	inline const char getStatusRegister(void){return _eeprom.getStatus();};
+	inline const char getStatusRegister(void){return _mem.getStatus();};
+	/**
+	\fn void writeArrayToEEprom(const uint8_t addr, uint8_t *data,uint8_t length)
+	\brief Facade for inserting an array of data to the EEPROM, using writeBytesToMemory
+	@param addr is the memory address. It should be between 0x00 and 0x7F, otherwise the counter will overflow
+	@param data is an array of bytes to write onto the memory
+	@param length is the length of the data to write, in general different from the array length
+	@see writeBytesToMemory
+	*/
+	inline void writeArrayToEEprom(const uint8_t addr, uint8_t *data,uint8_t length){writeBytesToMemory(addr,data,length,true);}
+	/**
+	\fn void writeByteToEEprom(const uint8_t addr, uint8_t data)
+	\brief write a single byte onto the RTC eeprom. It internally calls writeArrayToEEprom
+	@param addr is the memory address. It should be between 0x00 and 0x7F, otherwise the counter will overflow
+	@param data is the data to write
+	@see writeArrayToEEprom, writeBytesToMemory
+	*/
+	inline void writeByteToEEprom(const uint8_t addr, uint8_t data){ writeArrayToEEprom(addr,&data,1);}
+	/**
+	\fn void readArrayFromEEprom(const uint8_t addr, uint8_t *data,uint8_t length)
+	\brief reads a sequence of maximum 8 bytes from the RTC eeprom using readBytesFromMemory
+	@param addr is the memory start address. It should be between 0x00 and 0x7F, otherwise the counter will overflow
+	@param data is an array in which the data will be stored
+	@param length is the length of the data to read
+	@see readBytesFromMemory
+	*/
+	inline void readArrayFromEEprom(const uint8_t addr, uint8_t *data,uint8_t length){readBytesFromMemory(addr,data,length,true);}
+	/**
+	\fn uint8_t readByteFromEEprom(const uint8_t addr)
+	\brief reads a single byte from the RTC eeprom using readSingleByteFromMemory
+	@param addr is the memory start address. It should be between 0x00 and 0x7F, otherwise the counter will overflow
+	@return the value stored in the memory
+	@see readSingleByteFromMemory, readBytesFromMemory
+	*/
+	inline uint8_t readByteFromEEprom(const uint8_t addr){return readSingleByteFromMemory(addr,true);}
+	/**
+	\fn void writeArrayToSRAM(const uint8_t addr, uint8_t *data,uint8_t length)
+	\brief Facade for inserting an array of data to the SRAM
+	@param addr is the memory address. It must be between 0x20 and 0x5F. The counter won't overflow
+	@param data is an array of data to write into the SRAM
+	@param length is the number of bytes to write
+	@see writeBytesToMemory
+	*/
+	 inline void writeArrayToSRAM(const uint8_t addr, uint8_t *data,uint8_t length){writeBytesToMemory(addr,data,length,false);}
+	/**
+	\fn void writeByteToSRAM(const uint8_t addr, uint8_t data)
+	\brief writes a single byte to SRAM memory
+	@param addr is the memory address
+	@param data is the byte to write
+	@see writeByteToSRAM, writeBytesToMemory
+	*/
+	 inline void writeByteToSRAM(const uint8_t addr, uint8_t data){ writeArrayToSRAM(addr,&data,1);}
+	 /**
+	 \fn void readArrayFromSRAM(const uint8_t addr, uint8_t *data,uint8_t length)
+	 \brief facade for reading a set of bytes from the SRAM memory
+	 @param addr the memory starting address
+	 @param data the array on which the data will be written
+	 @param length the number of bytes to read
+	 @see readBytesFromMemory
+	 */
+	 inline void readArrayFromSRAM(const uint8_t addr, uint8_t *data,uint8_t length){readBytesFromMemory(addr,data,length,false);}
+	/**
+	\fn uint8_t readByteFromSRAM(const uint8_t addr)
+	\brief reads a single byte from the SRAM memory
+	@param addr the address from which to read
+	@return the value stored in the SRAM
+	@see readBytesFromMemory
+	*/
+	inline uint8_t readByteFromSRAM(const uint8_t addr){return readSingleByteFromMemory(addr,false);}
 	
-	inline boolean writeSequentialBytes(const uint8_t addr, uint8_t *data,uint8_t length){return (_eeprom.writeSequentialBytes(addr,data,length)==0)?true:false;}
-	inline boolean writeSingleByte(const uint8_t addr, uint8_t data){return writeSequentialBytes(addr,&data,1);}
-	inline boolean readSequentialBytes(const uint8_t addr, uint8_t *data,uint8_t length){return (_eeprom.readSequentialBytes(addr,data,length)==0)?true:false;}
-	inline boolean readSingleByte(const uint8_t addr, uint8_t* data){return readSequentialBytes(addr,data,1);}
 };
 
 #endif

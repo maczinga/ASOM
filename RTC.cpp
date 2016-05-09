@@ -2,7 +2,7 @@
  RTC LIBRARY:
  
  Written by Enrico Formenti.  
- Version 1.0 by Daniele Ratti
+ Version 1.5 by Daniele Ratti
  BSD license, check license.txt for more information
  All text above must be included in any redistribution.
  ******************************************************/
@@ -14,8 +14,8 @@
  \brief Implementation of the RTC class.
  \author Enrico Formenti
  \author Daniele Ratti
- \version 1.0
- \date 2012-2013, 2015
+ \version 1.5
+ \date 2012-2013, 2016
  \warning This software is provided "as is". The author is 
  not responsible for any damage of any kind caused by this
  software. Use it at your own risk.
@@ -218,10 +218,7 @@ void RTC::setTime(const uint8_t target, const char *format, ...) {
 	start();
 }
 
-void RTC::forceFeedback(const uint8_t target, const uint8_t val)
-{
-	writeByte(target,val);
-}
+
 
 void RTC::setDate(const uint8_t target, const char *format, ...) {
 	va_list pl;
@@ -458,11 +455,6 @@ void RTC::setSquareWaveOutput(uint8_t freqval){
 	start();
 }
 
-// void setBit(uint8_t byte,uint8_t val){
-// 	stop();
-// 	writeByte(byte,val);
-// 	start();
-// }
 
 void RTC::clearSquareWaveOutput(){
 	uint8_t val=readByte(RTC_CONFIGURATION_BYTE);
@@ -471,4 +463,25 @@ void RTC::clearSquareWaveOutput(){
 	writeByte(RTC_CONFIGURATION_BYTE,val);
 	start();
 }
+
+void RTC::readBytesFromMemory(const uint8_t address,uint8_t*data,uint8_t length,boolean isEEprom){
+	if(isEEprom)
+		_mem.readEEpromBytes(address,data,length);
+	else
+		_mem.readSRAMBytes(address,data,length);
+}
+void RTC::writeBytesToMemory(const uint8_t address,uint8_t*data,uint8_t length,boolean isEEprom){
+	if(isEEprom&&_allowEEpromOverflow)
+		_mem.writeEEpromBytes(address,data,length);
+	else if(isEEprom)
+		_mem.writeEEpromBytesNoOF(address,data,length);
+	else
+		_mem.writeSRAMBytes(address,data,length);
+}
+uint8_t RTC::readSingleByteFromMemory(const uint8_t addr,boolean isEEprom){
+		 uint8_t retval;
+		 readBytesFromMemory(addr,&retval,1,isEEprom);
+		 return retval;
+}
+
 
